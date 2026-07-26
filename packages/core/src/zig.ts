@@ -276,6 +276,10 @@ function getOpenTUILib(libPath?: string) {
       args: ["u32", "ptr"],
       returns: "void",
     },
+    setFrameOverlay: {
+      args: ["u32", "ptr", "u32"],
+      returns: "bool",
+    },
     setRenderOffset: {
       args: ["u32", "u32"],
       returns: "void",
@@ -1986,6 +1990,7 @@ export interface RenderLib extends AudioEngineLib {
   setUseThread: (renderer: RendererHandle, useThread: boolean) => void
   setClearOnShutdown: (renderer: RendererHandle, clear: boolean) => void
   setBackgroundColor: (renderer: RendererHandle, color: RGBA) => void
+  setFrameOverlay: (renderer: RendererHandle, bytes: Uint8Array) => boolean
   setRenderOffset: (renderer: RendererHandle, offset: number) => void
   resetSplitScrollback: (renderer: RendererHandle, seedRows: number, pinnedRenderOffset: number) => number
   syncSplitScrollback: (renderer: RendererHandle, pinnedRenderOffset: number) => number
@@ -2832,6 +2837,10 @@ class FFIRenderLib implements RenderLib {
 
   public setBackgroundColor(renderer: Pointer, color: RGBA) {
     this.opentui.symbols.setBackgroundColor(renderer, rgbaPtr(color))
+  }
+
+  public setFrameOverlay(renderer: Pointer, bytes: Uint8Array): boolean {
+    return Boolean(this.opentui.symbols.setFrameOverlay(renderer, ptrOrNull(bytes), bytes.byteLength))
   }
 
   public setRenderOffset(renderer: Pointer, offset: number) {

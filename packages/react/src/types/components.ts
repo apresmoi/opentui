@@ -10,6 +10,8 @@ import type {
   DiffRenderableOptions,
   InputRenderable,
   InputRenderableOptions,
+  ImageRenderable,
+  ImageOptions,
   LineNumberOptions,
   LineNumberRenderable,
   MarkdownOptions,
@@ -144,6 +146,8 @@ export type InputProps = ComponentProps<InputRenderableOptions, InputRenderable>
   onChange?: (value: string) => void
   onSubmit?: (value: string) => void
 }
+
+export type ImageProps = ComponentProps<ImageOptions, ImageRenderable>
 
 export type TextareaProps = ComponentProps<TextareaOptions, TextareaRenderable> & {
   focused?: boolean

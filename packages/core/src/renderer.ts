@@ -54,6 +54,7 @@ import { type Clock, type TimerHandle, SystemClock } from "./lib/clock.js"
 import { StdinParser, type StdinEvent, type StdinParserProtocolContext } from "./lib/stdin-parser.js"
 import { matchesKeyBinding } from "./lib/keybinding.internal.js"
 import { RendererThemeMode } from "./renderer-theme-mode.js"
+import { nativeImageFrame, type NativeImagePlacement } from "./lib/native-image.js"
 
 registerEnvVar({
   name: "OTUI_DUMP_CAPTURES",
@@ -763,6 +764,8 @@ export class CliRenderer extends EventEmitter implements RenderContext {
   private frameTimes: number[] = []
   private maxStatSamples: number = 300
   private postProcessFns: ((buffer: OptimizedBuffer, deltaTime: number) => void)[] = []
+  private nativeImages: NativeImagePlacement[] = []
+  private nativeImageOutput: Uint8Array<ArrayBufferLike> = new Uint8Array()
   private backgroundColor: RGBA = RGBA.fromInts(0, 0, 0, 0)
   private waitingForPixelResolution: boolean = false
   private readonly clock: Clock
@@ -4430,6 +4433,7 @@ export class CliRenderer extends EventEmitter implements RenderContext {
       const end = performance.now()
       this.renderStats.frameCallbackTime = end - start
 
+      this.nativeImages = []
       this.root.render(this.nextRenderBuffer, deltaTime)
 
       for (const postProcessFn of this.postProcessFns) {
@@ -4437,6 +4441,18 @@ export class CliRenderer extends EventEmitter implements RenderContext {
       }
 
       this._console.renderToBuffer(this.nextRenderBuffer)
+
+      const nativeImageOutput = nativeImageFrame(this.nativeImages)
+      const nativeImagesChanged =
+        nativeImageOutput.length !== this.nativeImageOutput.length ||
+        nativeImageOutput.some((value, index) => value !== this.nativeImageOutput[index])
+      if (nativeImagesChanged) {
+        this.nativeImageOutput = nativeImageOutput
+        if (!this.lib.setFrameOverlay(this.rendererPtr, nativeImageOutput)) {
+          throw new Error("Native image frame exceeds the renderer overlay limit")
+        }
+        this.forceFullRepaintRequested = true
+      }
 
       // If destroy() was requested during this frame, skip native work and scheduling.
       if (!this._isDestroyed) {
@@ -4524,6 +4540,18 @@ export class CliRenderer extends EventEmitter implements RenderContext {
   public intermediateRender(): void {
     this.immediateRerenderRequested = true
     this.loop()
+  }
+
+  public registerNativeImage(placement: NativeImagePlacement): void {
+    if (
+      placement.x < 0 ||
+      placement.y < 0 ||
+      placement.x + placement.width > this.width ||
+      placement.y + placement.height > this.height
+    ) {
+      return
+    }
+    this.nativeImages.push(placement)
   }
 
   private renderNative(): "rendered" | "retryable-skip" | "failed" | "blocked" | "backpressured" {

@@ -210,6 +210,7 @@ pub const CliRenderer = struct {
     palette_epoch: u32,
     last_rendered_palette_epoch: ?u32 = null,
     force_full_repaint: bool = false,
+    frame_overlay: []u8 = &.{},
     palette_index_cache: std.AutoHashMapUnmanaged(u64, u8) = .{},
 
     pub const OutputTarget = union(enum) {
@@ -374,6 +375,7 @@ pub const CliRenderer = struct {
         self.statSamples.cellsUpdated.deinit(self.allocator);
         self.statSamples.frameCallbackTime.deinit(self.allocator);
         self.palette_index_cache.deinit(self.allocator);
+        if (self.frame_overlay.len > 0) self.allocator.free(self.frame_overlay);
 
         self.allocator.free(self.currentHitGrid);
         self.allocator.free(self.nextHitGrid);
@@ -718,6 +720,16 @@ pub const CliRenderer = struct {
         }
 
         self.renderOffset = offset;
+    }
+
+    pub fn setFrameOverlay(self: *CliRenderer, bytes: []const u8) bool {
+        const max_overlay_bytes = 12 * 1024 * 1024;
+        if (bytes.len > max_overlay_bytes) return false;
+        var replacement: []u8 = &.{};
+        if (bytes.len > 0) replacement = self.allocator.dupe(u8, bytes) catch return false;
+        if (self.frame_overlay.len > 0) self.allocator.free(self.frame_overlay);
+        self.frame_overlay = replacement;
+        return true;
     }
 
     fn renderStatusFromWrite(status: output.WriteStatus) RenderStatus {
@@ -1567,6 +1579,14 @@ pub const CliRenderer = struct {
             }
             ansi.ANSI.setMousePointerOutput(writer, mousePointer.toName()) catch {};
             self.lastMousePointerStyle = mousePointer;
+        }
+
+        if (self.frame_overlay.len > 0) {
+            if (!frame_started) {
+                beginRenderFrame(writer);
+                frame_started = true;
+            }
+            writer.writeAll(self.frame_overlay) catch {};
         }
 
         // Only close sync if we opened it. This keeps true no-op frames empty.

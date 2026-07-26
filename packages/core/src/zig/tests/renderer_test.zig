@@ -2173,6 +2173,25 @@ test "renderer - unchanged frame with unchanged cursor emits no output" {
     try std.testing.expectEqual(@as(usize, 0), output.len);
 }
 
+test "renderer - native image overlay is committed after the text frame" {
+    const pool = gp.initGlobalPool(std.testing.allocator);
+    defer gp.deinitGlobalPool();
+    var local_link_pool = link.LinkPool.init(std.testing.allocator);
+    defer local_link_pool.deinit();
+
+    var test_cli_renderer = try TestRenderer.create(std.testing.allocator, 12, 4, pool);
+    defer test_cli_renderer.deinit();
+    const cli_renderer = test_cli_renderer.renderer;
+    const overlay = "\x1b7\x1b[2;3H\x1b]1337;File=inline=1;width=4;height=2:iVBORw0KGgo=\x07\x1b8";
+
+    try std.testing.expect(cli_renderer.setFrameOverlay(overlay));
+    _ = cli_renderer.render(false);
+    const output = test_cli_renderer.lastOutput();
+
+    try std.testing.expect(std.mem.indexOf(u8, output, overlay) != null);
+    try std.testing.expect(std.mem.indexOf(u8, output, ansi.ANSI.syncReset).? > std.mem.indexOf(u8, output, overlay).?);
+}
+
 test "renderer - buffered debug dump includes non-threaded last render" {
     const pool = gp.initGlobalPool(std.testing.allocator);
     defer gp.deinitGlobalPool();

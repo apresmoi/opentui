@@ -3,6 +3,7 @@ import type { EventEmitter } from "events"
 import type { Selection } from "./lib/selection.js"
 import type { Renderable } from "./Renderable.js"
 import type { InternalKeyHandler, KeyHandler } from "./lib/KeyHandler.js"
+import type { NativeImagePlacement } from "./lib/native-image.js"
 import type { EditBufferRenderable } from "./renderables/EditBufferRenderable.js"
 
 export const TextAttributes = {
@@ -122,6 +123,7 @@ export interface RenderContext extends EventEmitter {
   hasSelection: boolean
   getSelection: () => Selection | null
   requestSelectionUpdate: () => void
+  registerNativeImage?: (placement: NativeImagePlacement) => void
   currentFocusedRenderable: Renderable | null
   currentFocusedEditor: EditBufferRenderable | null
   focusRenderable: (renderable: Renderable) => void

@@ -650,6 +650,11 @@ export fn setBackgroundColor(renderer_handle: NativeHandle, color: [*]const u16)
     object_ptr.setBackgroundColor(ptrToRGBA(color));
 }
 
+export fn setFrameOverlay(renderer_handle: NativeHandle, bytesPtr: ?[*]const u8, bytesLen: u32) bool {
+    const object_ptr = acquireRenderer(renderer_handle) orelse return false;
+    return object_ptr.setFrameOverlay(sliceFromPtrLen(bytesPtr, bytesLen));
+}
+
 export fn setRenderOffset(renderer_handle: NativeHandle, offset: u32) void {
     const object_ptr = acquireRenderer(renderer_handle) orelse return;
     object_ptr.setRenderOffset(offset);
