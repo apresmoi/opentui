@@ -2190,6 +2190,10 @@ test "renderer - native image overlay is committed after the text frame" {
 
     try std.testing.expect(std.mem.indexOf(u8, output, overlay) != null);
     try std.testing.expect(std.mem.indexOf(u8, output, ansi.ANSI.syncReset).? > std.mem.indexOf(u8, output, overlay).?);
+
+    _ = cli_renderer.render(false);
+    const next_output = test_cli_renderer.lastOutput();
+    try std.testing.expectEqual(@as(usize, 0), next_output.len);
 }
 
 test "renderer - buffered debug dump includes non-threaded last render" {

@@ -1587,6 +1587,8 @@ pub const CliRenderer = struct {
                 frame_started = true;
             }
             writer.writeAll(self.frame_overlay) catch {};
+            self.allocator.free(self.frame_overlay);
+            self.frame_overlay = &.{};
         }
 
         // Only close sync if we opened it. This keeps true no-op frames empty.
