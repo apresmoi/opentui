@@ -6,6 +6,7 @@ import type {
   DiffProps,
   ExtendedIntrinsicElements,
   InputProps,
+  ImageProps,
   LineBreakProps,
   LineNumberProps,
   LinkProps,
@@ -44,6 +45,7 @@ export namespace JSX {
     diff: DiffProps
     markdown: MarkdownProps
     input: InputProps
+    image: ImageProps
     textarea: TextareaProps
     select: SelectProps
     scrollbox: ScrollBoxProps
